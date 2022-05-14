@@ -11,10 +11,6 @@ def all_products(request):
     products = Product.objects.all()
     query = None
     categories = None
-    #take the name and put it in a list, then filter the products whom the category name is in the list
-    #And then we'll filter all categories down to the ones whose name is in the list from the URL.
-    #converting the list of strings of category names passed through the URL into a list of actual
-    #  category objects, so that we can access all their fields in the template.
     sort = None
     direction = None
 
@@ -25,23 +21,19 @@ def all_products(request):
             if sortkey == 'name':
                 sortkey = 'lower_name'
                 products = products.annotate(lower_name=Lower('name'))
-
+            if sortkey == 'category':
+                sortkey = 'category__name'
             if 'direction' in request.GET:
                 direction = request.GET['direction']
                 if direction == 'desc':
                     sortkey = f'-{sortkey}'
             products = products.order_by(sortkey)
-    
-        
-    
-    if request.GET:
+            
         if 'category' in request.GET:
             categories = request.GET['category'].split(',')
-            print(categories)
             products = products.filter(category__name__in=categories)
-            print(products)
             categories = Category.objects.filter(name__in=categories)
-            print(categories)
+
         if 'q' in request.GET:
             query = request.GET['q']
             if not query:
@@ -52,6 +44,7 @@ def all_products(request):
             products = products.filter(queries)
 
     current_sorting = f'{sort}_{direction}'
+
     context = {
         'products': products,
         'search_term': query,
